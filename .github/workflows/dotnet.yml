@@ -16,12 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    
+
     - name: Restore dependencies
       run: dotnet restore gilded-sentinel-client.csproj
 
@@ -43,14 +43,24 @@ jobs:
 
     - name: Upload Windows Build Artifacts
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: Gilded-Sentinel-Build-Win-x64
+        name: Gilded-Sentinel-Build-Win-x64-${{ github.sha }}
         path: ./assemblies/win-x64
 
     - name: Upload Linux Build Artifacts
       if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: Gilded-Sentinel-Build-Linux-x64
+        name: Gilded-Sentinel-Build-Linux-x64-${{ github.sha }}
         path: ./assemblies/linux-x64
+
+    - name: Create Release
+      if: github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./assemblies/win-x64/*
+          ./assemblies/linux-x64/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
