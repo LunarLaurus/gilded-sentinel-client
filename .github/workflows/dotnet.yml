@@ -1,0 +1,56 @@
+name: Gilded Sentinel CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build in Release mode for Windows
+      if: matrix.os == 'windows-latest'
+      run: dotnet build --no-restore --configuration Release --runtime win-x64
+
+    - name: Build in Release mode for Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: dotnet build --no-restore --configuration Release --runtime linux-x64
+
+    - name: Publish for Windows x64
+      if: matrix.os == 'windows-latest'
+      run: dotnet publish --no-build --configuration Release --runtime win-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true --output ./assemblies/win-x64
+
+    - name: Publish for Linux x64
+      if: matrix.os == 'ubuntu-latest'
+      run: dotnet publish --no-build --configuration Release --runtime linux-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true --output ./assemblies/linux-x64
+
+    - name: Upload Windows Build Artifacts
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Gilded-Sentinel-Build-Win-x64
+        path: ./assemblies/win-x64
+
+    - name: Upload Linux Build Artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Gilded-Sentinel-Build-Linux-x64
+        path: ./assemblies/linux-x64
