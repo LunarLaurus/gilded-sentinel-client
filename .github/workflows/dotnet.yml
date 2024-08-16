@@ -98,5 +98,6 @@ jobs:
           files: |
             ./assemblies/win-x64/*
             ./assemblies/linux-x64/*
+          tag_name: v${{ github.run_number }} 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
