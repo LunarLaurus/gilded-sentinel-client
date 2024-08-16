@@ -8,9 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         runtime: [linux-x64, win-x64]
@@ -29,7 +28,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore gilded-sentinel-client.csproj
 
-      # Build in Release mode (without runtime)
+      # Build in Release mode
       - name: Build
         run: dotnet build gilded-sentinel-client.csproj --configuration Release
 
@@ -40,10 +39,8 @@ jobs:
       # Create ZIP file for the respective platform
       - name: Create ZIP
         run: |
-          if [ "${{ matrix.runtime }}" == "linux-x64" ]; then
-            zip -r ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-linux-${{ github.run_number }}.zip ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client ./assemblies/${{ matrix.runtime }}/appsettings.json
-          else
-            zip -r ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-win-${{ github.run_number }}.zip ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client.exe ./assemblies/${{ matrix.runtime }}/appsettings.json
+          zip_filename="./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-${{ matrix.runtime }}-${{ github.run_number }}.zip"
+          zip -r $zip_filename ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client* ./assemblies/${{ matrix.runtime }}/appsettings.json
 
       # Upload the build artifact
       - name: Upload Artifact
@@ -54,7 +51,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-and-publish
     if: github.event_name == 'push'
 
     steps:
@@ -62,25 +59,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Download Windows Build ZIP
-      - name: Download Windows Build ZIP
+      # Download build artifacts for both runtimes
+      - name: Download Windows Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: Gilded-Sentinel-Build-win-x64-${{ github.sha }}
           path: ./assemblies/
 
-      # Download Linux Build ZIP
-      - name: Download Linux Build ZIP
+      - name: Download Linux Build Artifacts
         uses: actions/download-artifact@v4
         with:
           name: Gilded-Sentinel-Build-linux-x64-${{ github.sha }}
           path: ./assemblies/
-
-      # Verify ZIP Files
-      - name: Verify ZIP Files
-        run: |
-          echo "Listing contents of directories:"
-          ls -l ./assemblies/
 
       # Configure Git for tagging
       - name: Configure Git
@@ -95,17 +85,13 @@ jobs:
           git tag -a "v${{ github.run_number }}" -m "Release v${{ github.run_number }}"
           git push origin "v${{ github.run_number }}"
 
-      # Verify Tag Creation
-      - name: Verify Tag Creation
-        run: git tag -l
-
       # Create GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
           files: |
-            ./assemblies/gilded-sentinel-client-win-${{ github.run_number }}.zip
-            ./assemblies/gilded-sentinel-client-linux-${{ github.run_number }}.zip
+            ./assemblies/gilded-sentinel-client-win-x64-${{ github.run_number }}.zip
+            ./assemblies/gilded-sentinel-client-linux-x64-${{ github.run_number }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
