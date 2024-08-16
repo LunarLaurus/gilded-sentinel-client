@@ -29,9 +29,7 @@ jobs:
 
       - name: Create ZIP file for Windows
         run: |
-          mkdir -p ./assemblies/win-x64/zipped
-          cd ./assemblies/win-x64
-          zip -r gilded-sentinel-client-${{ github.run_number }}.zip gilded-sentinel-client.exe appsettings.json
+          Compress-Archive -Path ./assemblies/win-x64/gilded-sentinel-client.exe, ./assemblies/win-x64/appsettings.json -DestinationPath ./assemblies/win-x64/gilded-sentinel-client-${{ github.run_number }}.zip
 
       - name: Upload Windows Build ZIP
         uses: actions/upload-artifact@v4
@@ -60,9 +58,7 @@ jobs:
 
       - name: Create ZIP file for Linux
         run: |
-          mkdir -p ./assemblies/linux-x64/zipped
-          cd ./assemblies/linux-x64
-          zip -r gilded-sentinel-client-${{ github.run_number }}.zip gilded-sentinel-client appsettings.json
+          zip -r ./assemblies/linux-x64/gilded-sentinel-client-${{ github.run_number }}.zip ./assemblies/linux-x64/gilded-sentinel-client ./assemblies/linux-x64/appsettings.json
 
       - name: Upload Linux Build ZIP
         uses: actions/upload-artifact@v4
