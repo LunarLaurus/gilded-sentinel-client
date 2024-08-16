@@ -29,17 +29,17 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # Restore dependencies (solution-level)
+      # Restore dependencies (project-level)
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore gilded-sentinel-client.csproj
 
-      # Build in Release mode
+      # Build in Release mode (without runtime)
       - name: Build
-        run: dotnet build --configuration Release --runtime ${{ matrix.runtime }}
+        run: dotnet build gilded-sentinel-client.csproj --configuration Release
 
       # Publish for the respective runtime
       - name: Publish
-        run: dotnet publish --configuration Release --runtime ${{ matrix.runtime }} --output ./assemblies/${{ matrix.runtime }}
+        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime ${{ matrix.runtime }} --output ./assemblies/${{ matrix.runtime }}
 
       # Create ZIP file for the respective platform
       - name: Create ZIP
