@@ -1,6 +1,6 @@
 # Gilded Sentinel Client
 
-Gilded Sentinel Client is a lightweight C# application designed to monitor system hardware (CPU, GPU, memory, etc.) and send data to a central server for real-time analysis and monitoring. It utilizes the LibreHardwareMonitor library to gather hardware metrics and transmit them to the Gilded Sentinel backend.
+The client is a lightweight C# application designed to monitor system hardware (CPU, GPU, memory, etc.) and send data to a central server for real-time analysis and monitoring. It utilizes the LibreHardwareMonitor library to gather hardware metrics and transmit them to the [Gilded Sentinel backend](https://github.com/LunarLaurus/gilded-sentinel-backend). This data is then accessible via the [Gilded Sentinel Web-UI](https://github.com/LunarLaurus/gilded-sentinel).
 
 ## Features
 
