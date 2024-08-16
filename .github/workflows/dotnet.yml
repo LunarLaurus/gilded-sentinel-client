@@ -25,13 +25,19 @@ jobs:
         run: dotnet build gilded-sentinel-client.csproj --configuration Release --runtime win-x64
 
       - name: Publish for Windows x64
-        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime win-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true --output ./assemblies/win-x64
+        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime win-x64 --output ./assemblies/win-x64
 
-      - name: Upload Windows Build Artifacts
+      - name: Create ZIP file for Windows
+        run: |
+          mkdir -p ./assemblies/win-x64/zipped
+          cd ./assemblies/win-x64
+          zip -r gilded-sentinel-client-${{ github.run_number }}.zip gilded-sentinel-client.exe appsettings.json
+
+      - name: Upload Windows Build ZIP
         uses: actions/upload-artifact@v4
         with:
           name: Gilded-Sentinel-Build-Win-x64-${{ github.sha }}
-          path: ./assemblies/win-x64
+          path: ./assemblies/win-x64/gilded-sentinel-client-${{ github.run_number }}.zip
 
   build-linux:
     runs-on: ubuntu-latest
@@ -50,13 +56,19 @@ jobs:
         run: dotnet build gilded-sentinel-client.csproj --configuration Release --runtime linux-x64
 
       - name: Publish for Linux x64
-        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime linux-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true --output ./assemblies/linux-x64
+        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime linux-x64 --output ./assemblies/linux-x64
 
-      - name: Upload Linux Build Artifacts
+      - name: Create ZIP file for Linux
+        run: |
+          mkdir -p ./assemblies/linux-x64/zipped
+          cd ./assemblies/linux-x64
+          zip -r gilded-sentinel-client-${{ github.run_number }}.zip gilded-sentinel-client appsettings.json
+
+      - name: Upload Linux Build ZIP
         uses: actions/upload-artifact@v4
         with:
           name: Gilded-Sentinel-Build-Linux-x64-${{ github.sha }}
-          path: ./assemblies/linux-x64
+          path: ./assemblies/linux-x64/gilded-sentinel-client-${{ github.run_number }}.zip
 
   create-release:
     runs-on: ubuntu-latest
@@ -66,13 +78,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download Windows Build Artifacts
+      - name: Download Windows Build ZIP
         uses: actions/download-artifact@v4
         with:
           name: Gilded-Sentinel-Build-Win-x64-${{ github.sha }}
           path: ./assemblies/win-x64
 
-      - name: Download Linux Build Artifacts
+      - name: Download Linux Build ZIP
         uses: actions/download-artifact@v4
         with:
           name: Gilded-Sentinel-Build-Linux-x64-${{ github.sha }}
@@ -96,8 +108,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./assemblies/win-x64/*
-            ./assemblies/linux-x64/*
-          tag_name: v${{ github.run_number }} 
+            ./assemblies/win-x64/gilded-sentinel-client-${{ github.run_number }}.zip
+            ./assemblies/linux-x64/gilded-sentinel-client-${{ github.run_number }}.zip
+          tag_name: v${{ github.run_number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
