@@ -86,6 +86,12 @@ jobs:
           name: Gilded-Sentinel-Build-Linux-x64-${{ github.sha }}
           path: ./assemblies/linux-x64
 
+      - name: Verify ZIP Files
+        run: |
+          echo "Listing contents of directories:"
+          ls -l ./assemblies/win-x64
+          ls -l ./assemblies/linux-x64
+
       - name: Configure Git
         run: |
           git config --global user.email "actions@github.com"
