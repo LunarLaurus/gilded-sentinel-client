@@ -9,15 +9,11 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            runtime: linux-x64
-          - os: windows-latest
-            runtime: win-x64
+        runtime: [linux-x64, win-x64]
 
     steps:
       # Checkout the repository
@@ -44,10 +40,10 @@ jobs:
       # Create ZIP file for the respective platform
       - name: Create ZIP
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          if [ "${{ matrix.runtime }}" == "linux-x64" ]; then
             zip -r ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-linux-${{ github.run_number }}.zip ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client ./assemblies/${{ matrix.runtime }}/appsettings.json
           else
-            Compress-Archive -Path ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client.exe, ./assemblies/${{ matrix.runtime }}/appsettings.json -DestinationPath ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-win-${{ github.run_number }}.zip
+            zip -r ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-win-${{ github.run_number }}.zip ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client.exe ./assemblies/${{ matrix.runtime }}/appsettings.json
 
       # Upload the build artifact
       - name: Upload Artifact
