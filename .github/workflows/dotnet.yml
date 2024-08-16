@@ -8,110 +8,108 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+          - os: windows-latest
+            runtime: win-x64
+
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v4
 
+      # Setup .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
+      # Restore dependencies (solution-level)
       - name: Restore dependencies
-        run: dotnet restore gilded-sentinel-client.csproj
+        run: dotnet restore
 
-      - name: Build in Release mode for Windows
-        run: dotnet build gilded-sentinel-client.csproj --configuration Release --runtime win-x64
+      # Build in Release mode
+      - name: Build
+        run: dotnet build --configuration Release --runtime ${{ matrix.runtime }}
 
-      - name: Publish for Windows x64
-        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime win-x64 --output ./assemblies/win-x64
+      # Publish for the respective runtime
+      - name: Publish
+        run: dotnet publish --configuration Release --runtime ${{ matrix.runtime }} --output ./assemblies/${{ matrix.runtime }}
 
-      - name: Create ZIP file for Windows
+      # Create ZIP file for the respective platform
+      - name: Create ZIP
         run: |
-          Compress-Archive -Path ./assemblies/win-x64/gilded-sentinel-client.exe, ./assemblies/win-x64/appsettings.json -DestinationPath ./assemblies/win-x64/gilded-sentinel-client-${{ github.run_number }}.zip
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            zip -r ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-linux-${{ github.run_number }}.zip ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client ./assemblies/${{ matrix.runtime }}/appsettings.json
+          else
+            Compress-Archive -Path ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client.exe, ./assemblies/${{ matrix.runtime }}/appsettings.json -DestinationPath ./assemblies/${{ matrix.runtime }}/gilded-sentinel-client-win-${{ github.run_number }}.zip
 
-      - name: Upload Windows Build ZIP
+      # Upload the build artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Gilded-Sentinel-Build-Win-x64-${{ github.sha }}
-          path: ./assemblies/win-x64/gilded-sentinel-client-${{ github.run_number }}.zip
-
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Restore dependencies
-        run: dotnet restore gilded-sentinel-client.csproj
-
-      - name: Build in Release mode for Linux
-        run: dotnet build gilded-sentinel-client.csproj --configuration Release --runtime linux-x64
-
-      - name: Publish for Linux x64
-        run: dotnet publish gilded-sentinel-client.csproj --configuration Release --runtime linux-x64 --output ./assemblies/linux-x64
-
-      - name: Create ZIP file for Linux
-        run: |
-          zip -r ./assemblies/linux-x64/gilded-sentinel-client-${{ github.run_number }}.zip ./assemblies/linux-x64/gilded-sentinel-client ./assemblies/linux-x64/appsettings.json
-
-      - name: Upload Linux Build ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: Gilded-Sentinel-Build-Linux-x64-${{ github.sha }}
-          path: ./assemblies/linux-x64/gilded-sentinel-client-${{ github.run_number }}.zip
+          name: Gilded-Sentinel-Build-${{ matrix.runtime }}-${{ github.sha }}
+          path: ./assemblies/${{ matrix.runtime }}/*-${{ github.run_number }}.zip
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    needs: build
     if: github.event_name == 'push'
+
     steps:
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Download Windows Build ZIP
       - name: Download Windows Build ZIP
         uses: actions/download-artifact@v4
         with:
-          name: Gilded-Sentinel-Build-Win-x64-${{ github.sha }}
-          path: ./assemblies/win-x64
+          name: Gilded-Sentinel-Build-win-x64-${{ github.sha }}
+          path: ./assemblies/
 
+      # Download Linux Build ZIP
       - name: Download Linux Build ZIP
         uses: actions/download-artifact@v4
         with:
-          name: Gilded-Sentinel-Build-Linux-x64-${{ github.sha }}
-          path: ./assemblies/linux-x64
+          name: Gilded-Sentinel-Build-linux-x64-${{ github.sha }}
+          path: ./assemblies/
 
+      # Verify ZIP Files
       - name: Verify ZIP Files
         run: |
           echo "Listing contents of directories:"
-          ls -l ./assemblies/win-x64
-          ls -l ./assemblies/linux-x64
+          ls -l ./assemblies/
 
+      # Configure Git for tagging
       - name: Configure Git
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
+      # Create Git Tag
       - name: Create Git Tag
         id: tag
         run: |
           git tag -a "v${{ github.run_number }}" -m "Release v${{ github.run_number }}"
           git push origin "v${{ github.run_number }}"
 
+      # Verify Tag Creation
       - name: Verify Tag Creation
         run: git tag -l
 
+      # Create GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ./assemblies/win-x64/gilded-sentinel-client-${{ github.run_number }}.zip
-            ./assemblies/linux-x64/gilded-sentinel-client-${{ github.run_number }}.zip
           tag_name: v${{ github.run_number }}
+          files: |
+            ./assemblies/gilded-sentinel-client-win-${{ github.run_number }}.zip
+            ./assemblies/gilded-sentinel-client-linux-${{ github.run_number }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
