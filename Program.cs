@@ -16,9 +16,11 @@ internal partial class SystemInfoDTOJsonContext : JsonSerializerContext
 
 public class SystemInfoDTO
 {
-    public string ClientName { get; set; }
-    public int CpuCount { get; set; }
-    public Dictionary<string, Dictionary<string, float?>> CpuTemperatures { get; set; }
+    public String ClientName { get; set; }
+    public String ModelName { get; set; }
+    public HardwareMonitor.CPUInfoDto CpuInfo { get; set; }
+    public List<HardwareMonitor.GPUInfoDto> Gpus { get; set; }
+    public HardwareMonitor.MemoryStateDto Memory { get; set; }
     public string IloAddress { get; set; }
 }
 
@@ -39,10 +41,12 @@ class Program
         LogMessage($"Connecting {GetHostName()} to {masterIp}:{masterPort} and polling data every {clientPollRate} seconds.");
         if (!IsZeroIPAddress(iloAddress))
         {
-            LogMessage("Ilo Address supplied: "+iloAddress);
+            LogMessage("Ilo Address supplied: " + iloAddress);
         }
 
         var hardwareMonitor = new HardwareMonitor();
+        String ClientHostName = GetHostName();
+        String ClientModelName = hardwareMonitor.GetMotherboardName();
 
         while (true)
         {
@@ -50,9 +54,11 @@ class Program
             {
                 var systemInfo = new SystemInfoDTO
                 {
-                    ClientName = GetHostName(),
-                    CpuCount = hardwareMonitor.GetTotalCPUs(),
-                    CpuTemperatures = hardwareMonitor.GetCPUTemperatures(),
+                    ClientName = ClientHostName,
+                    CpuInfo = hardwareMonitor.GetCPUInfo(),
+                    Gpus = hardwareMonitor.GetGPUInfo(),
+                    Memory = hardwareMonitor.GetMemoryState(),
+                    ModelName = ClientModelName,
                     IloAddress = iloAddress
                 };
 
