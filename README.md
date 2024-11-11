@@ -49,14 +49,14 @@ The client is configured via the appsettings.json file. This file contains the s
 {
     "General": {
         "ip": "192.168.0.10",
-        "iloAddress": "0.0.0.0",
+        "ipmiAddress": "0.0.0.0",
         "port": "32500",
         "pollInSeconds": "3"
     }
 }
 ```
 - ip: The IP address of the central server to which the client will send data.  
-- iloAddress: The IP address of the clients iLO interface if available, else leave as `0.0.0.0`.
+- ipmiAddress: The IP address of the clients IPMI interface if available, else leave as `0.0.0.0`.
 - port: The port on the server that listens for incoming data.  
 - pollInSeconds: The interval (in seconds) between data collection.
 
