@@ -28,7 +28,7 @@ public record SystemInfoDTO
     public HardwareMonitor.CPUInfoDto CpuInfo { get; set; }
     public List<HardwareMonitor.GPUInfoDto> Gpus { get; set; }
     public HardwareMonitor.MemoryStateDto Memory { get; set; }
-    public string IloAddress { get; set; }
+    public string IpmiAddress { get; set; }
 
 }
 
@@ -44,7 +44,7 @@ class Program
         var masterIp = configuration["General:ip"];
         var masterPort = int.Parse(configuration["General:port"]);
         var clientPollRate = int.Parse(configuration["General:pollInSeconds"]);
-        var iloAddress = configuration["General:iloAddress"];
+        var ipmiAddress = configuration["General:ipmiAddress"];
 
         var isSystem64Bit = EnvironmentUtils.Is64BitOperatingSystem();
         var isProcess64Bit = EnvironmentUtils.Is64BitProcess();
@@ -55,9 +55,9 @@ class Program
         long cycleCounter = 0;
 
         LogMessage($"Connecting {GetHostName()} to {masterIp}:{masterPort} and polling data every {clientPollRate} seconds.");
-        if (!IsZeroIPAddress(iloAddress))
+        if (!IsZeroIPAddress(ipmiAddress))
         {
-            LogMessage("Ilo Address supplied: " + iloAddress);
+            LogMessage("Ipmi Address supplied: " + ipmiAddress);
         }
 
         var hardwareMonitor = new HardwareMonitor();
@@ -81,7 +81,7 @@ class Program
                     Gpus = hardwareMonitor.GetGPUInfo(),
                     Memory = hardwareMonitor.GetMemoryState(),
                     SystemModelName = ClientModelName,
-                    IloAddress = iloAddress,
+                    IpmiAddress = ipmiAddress,
                     System64Bit = isSystem64Bit,
                     DotNetProcess64Bit = isProcess64Bit,
                     SystemArchitecture = systemArch,
