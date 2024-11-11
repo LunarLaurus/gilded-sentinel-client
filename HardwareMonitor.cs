@@ -26,28 +26,28 @@ public class HardwareMonitor
         public int CpuCoreCount { get; set; }
         public class CPUData
         {
-            public Dictionary<string, float?> Temperatures { get; set; } = new();
-            public Dictionary<string, float?> Load { get; set; } = new();
-            public Dictionary<string, float?> ClockSpeeds { get; set; } = new();
+            public Dictionary<string, float> Temperatures { get; set; } = new();
+            public Dictionary<string, float> Load { get; set; } = new();
+            public Dictionary<string, float> ClockSpeeds { get; set; } = new();
         }
     }
 
     // Memory State Class
     public record MemoryStateDto
     {
-        public float? Used { get; set; }
-        public float? Available { get; set; }
-        public float? Load { get; set; }
+        public float Used { get; set; }
+        public float Available { get; set; }
+        public float Load { get; set; }
     }
 
     // GPU Info Class
     public record GPUInfoDto
     {
         public string Name { get; set; }
-        public Dictionary<string, float?> Temperatures { get; set; } = new();
-        public Dictionary<string, float?> Load { get; set; } = new();
-        public Dictionary<string, float?> ClockSpeeds { get; set; } = new();
-        public Dictionary<string, float?> MemoryUsage { get; set; } = new();
+        public Dictionary<string, float> Temperatures { get; set; } = new();
+        public Dictionary<string, float> Load { get; set; } = new();
+        public Dictionary<string, float> ClockSpeeds { get; set; } = new();
+        public Dictionary<string, float> MemoryUsage { get; set; } = new();
     }
 
     // Get CPU Data
@@ -73,13 +73,13 @@ public class HardwareMonitor
                     switch (sensor.SensorType)
                     {
                         case SensorType.Temperature:
-                            cpuData.Temperatures[sensor.Name] = sensor.Value;
+                            cpuData.Temperatures[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                         case SensorType.Load:
-                            cpuData.Load[sensor.Name] = sensor.Value;
+                            cpuData.Load[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                         case SensorType.Clock:
-                            cpuData.ClockSpeeds[sensor.Name] = sensor.Value;
+                            cpuData.ClockSpeeds[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                     }
                 }
@@ -132,12 +132,12 @@ public class HardwareMonitor
                     {
                         case SensorType.Data:
                             if (sensor.Name.Contains("Used"))
-                                memoryState.Used = sensor.Value;
+                                memoryState.Used = sensor.Value.GetValueOrDefault();
                             else if (sensor.Name.Contains("Available"))
-                                memoryState.Available = sensor.Value;
+                                memoryState.Available = sensor.Value.GetValueOrDefault();
                             break;
                         case SensorType.Load:
-                            memoryState.Load = sensor.Value;
+                            memoryState.Load = sensor.Value.GetValueOrDefault();
                             break;
                     }
                 }
@@ -167,16 +167,16 @@ public class HardwareMonitor
                     switch (sensor.SensorType)
                     {
                         case SensorType.Temperature:
-                            gpuInfo.Temperatures[sensor.Name] = sensor.Value;
+                            gpuInfo.Temperatures[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                         case SensorType.Load:
-                            gpuInfo.Load[sensor.Name] = sensor.Value;
+                            gpuInfo.Load[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                         case SensorType.Clock:
-                            gpuInfo.ClockSpeeds[sensor.Name] = sensor.Value;
+                            gpuInfo.ClockSpeeds[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                         case SensorType.SmallData:
-                            gpuInfo.MemoryUsage[sensor.Name] = sensor.Value;
+                            gpuInfo.MemoryUsage[sensor.Name] = sensor.Value.GetValueOrDefault();
                             break;
                     }
                 }

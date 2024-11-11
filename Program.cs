@@ -17,19 +17,19 @@ internal partial class SystemInfoDTOJsonContext : JsonSerializerContext
 
 public record SystemInfoDTO
 {
-    public string ClientName { get; set; }
-    public string ModelName { get; set; }
+    public string SystemArchitecture { get; set; }
+    public string SystemPlatform { get; set; }
+    public string SystemHostName { get; set; }
+    public string SystemModelName { get; set; }
+    public bool System64Bit { get; set; }
+    public bool DotNetProcess64Bit { get; set; }
+    public long SystemUptime { get; set; }
+    public List<StorageDriveDto> SystemStorageInfo { get; set; }
     public HardwareMonitor.CPUInfoDto CpuInfo { get; set; }
     public List<HardwareMonitor.GPUInfoDto> Gpus { get; set; }
     public HardwareMonitor.MemoryStateDto Memory { get; set; }
     public string IloAddress { get; set; }
-    public long SystemUptime { get; set; }
-    public string SystemArchitecture { get; set; }
-    public string SystemPlatform { get; set; }
-    public List<StorageDriveDto> SystemStorageInformation { get; set; }
-    public bool System64Bit { get; set; }
-    public bool DotNetProcess64Bit { get; set; }
-    
+
 }
 
 class Program
@@ -76,17 +76,17 @@ class Program
 
                 var systemInfo = new SystemInfoDTO
                 {
-                    ClientName = ClientHostName,
+                    SystemHostName = ClientHostName,
                     CpuInfo = hardwareMonitor.GetCPUInfo(),
                     Gpus = hardwareMonitor.GetGPUInfo(),
                     Memory = hardwareMonitor.GetMemoryState(),
-                    ModelName = ClientModelName,
+                    SystemModelName = ClientModelName,
                     IloAddress = iloAddress,
                     System64Bit = isSystem64Bit,
                     DotNetProcess64Bit = isProcess64Bit,
                     SystemArchitecture = systemArch,
                     SystemPlatform = systemPlatform,
-                    SystemStorageInformation = systemStorage,
+                    SystemStorageInfo = systemStorage,
                     SystemUptime = EnvironmentUtils.GetRawUptime(),
                 };
                 LogMessage(systemInfo.ToString());
