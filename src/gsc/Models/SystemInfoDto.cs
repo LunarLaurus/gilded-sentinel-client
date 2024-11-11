@@ -1,6 +1,6 @@
 public record SystemInfoDTO
 {
-    public string SystemArchitecture { get; set; }
+    public int SystemArchitecture { get; set; }
     public string SystemPlatform { get; set; }
     public string SystemHostName { get; set; }
     public string SystemModelName { get; set; }

@@ -25,7 +25,8 @@ public static class EnvironmentUtils
     }
 
     // Get the architecture of the operating system.
-    public static string GetSystemArchitecture() => ArchitectureExtensions.ToString(RuntimeInformation.ProcessArchitecture);
+    public static int GetSystemArchitecture() => (int)RuntimeInformation.ProcessArchitecture;
+    public static string GetSystemArchitectureName() => ArchitectureExtensions.ToString(RuntimeInformation.ProcessArchitecture);
 
     // Get the current system user's name.
     public static string GetCurrentUserName() => Environment.UserName;
