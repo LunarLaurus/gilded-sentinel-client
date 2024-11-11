@@ -1,36 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.NetworkInformation;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
 using Microsoft.Extensions.Configuration;
-using static EnvironmentUtils;
-
-[JsonSerializable(typeof(SystemInfoDTO))]
-internal partial class SystemInfoDTOJsonContext : JsonSerializerContext
-{
-}
-
-public record SystemInfoDTO
-{
-    public string SystemArchitecture { get; set; }
-    public string SystemPlatform { get; set; }
-    public string SystemHostName { get; set; }
-    public string SystemModelName { get; set; }
-    public bool System64Bit { get; set; }
-    public bool DotNetProcess64Bit { get; set; }
-    public long SystemUptime { get; set; }
-    public List<StorageDriveDto> SystemStorageInfo { get; set; }
-    public HardwareMonitor.CPUInfoDto CpuInfo { get; set; }
-    public List<HardwareMonitor.GPUInfoDto> Gpus { get; set; }
-    public HardwareMonitor.MemoryStateDto Memory { get; set; }
-    public string IpmiAddress { get; set; }
-
-}
 
 class Program
 {
@@ -52,17 +23,19 @@ class Program
         var systemPlatform = EnvironmentUtils.GetPlatform();
         var systemStorage = EnvironmentUtils.GetDriveInfo();
 
+        string hostname = NetworkUtils.GetHostName();
+
         long cycleCounter = 0;
 
-        LogMessage($"Connecting {GetHostName()} to {masterIp}:{masterPort} and polling data every {clientPollRate} seconds.");
-        if (!IsZeroIPAddress(ipmiAddress))
+        LogMessage($"Connecting {hostname} to {masterIp}:{masterPort} and polling data every {clientPollRate} seconds.");
+        if (!NetworkUtils.IsZeroIPAddress(ipmiAddress))
         {
             LogMessage("Ipmi Address supplied: " + ipmiAddress);
         }
 
         var hardwareMonitor = new HardwareMonitor();
-        String ClientHostName = GetHostName();
-        String ClientModelName = hardwareMonitor.GetMotherboardName();
+        string ClientModelName = hardwareMonitor.GetMotherboardName();
+        var psuInfo = hardwareMonitor.GetPsuInfo();
 
         while (true)
         {
@@ -76,9 +49,9 @@ class Program
 
                 var systemInfo = new SystemInfoDTO
                 {
-                    SystemHostName = ClientHostName,
-                    CpuInfo = hardwareMonitor.GetCPUInfo(),
-                    Gpus = hardwareMonitor.GetGPUInfo(),
+                    SystemHostName = hostname,
+                    CpuInfo = hardwareMonitor.GetCpuInfo(),
+                    Gpus = hardwareMonitor.GetGpuInfo(),
                     Memory = hardwareMonitor.GetMemoryState(),
                     SystemModelName = ClientModelName,
                     IpmiAddress = ipmiAddress,
@@ -87,6 +60,7 @@ class Program
                     SystemArchitecture = systemArch,
                     SystemPlatform = systemPlatform,
                     SystemStorageInfo = systemStorage,
+                    PowerSupplies = psuInfo,
                     SystemUptime = EnvironmentUtils.GetRawUptime(),
                 };
                 LogMessage(systemInfo.ToString());
@@ -143,35 +117,4 @@ class Program
         Console.WriteLine($"[{timestamp}] {message}");
     }
 
-    static bool IsZeroIPAddress(string ipAddress)
-    {
-        if (IPAddress.TryParse(ipAddress, out IPAddress parsedAddress))
-        {
-            // Compare the parsed IP address to the IPAddress representation of "0.0.0.0"
-            return parsedAddress.Equals(IPAddress.Any);
-        }
-
-        // Return false if the input string is not a valid IP address
-        return false;
-    }
-
-    public static string GetHostName()
-    {
-        string[] hostNameMethods =
-        {
-            Environment.MachineName,
-            Dns.GetHostName(),
-            Dns.GetHostEntry(Dns.GetHostName()).HostName
-        };
-
-        foreach (var hostName in hostNameMethods)
-        {
-            if (!string.IsNullOrEmpty(hostName))
-            {
-                return hostName;
-            }
-        }
-
-        return "UnknownHost";
-    }
 }
