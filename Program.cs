@@ -8,20 +8,28 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
+using static EnvironmentUtils;
 
 [JsonSerializable(typeof(SystemInfoDTO))]
 internal partial class SystemInfoDTOJsonContext : JsonSerializerContext
 {
 }
 
-public class SystemInfoDTO
+public record SystemInfoDTO
 {
-    public String ClientName { get; set; }
-    public String ModelName { get; set; }
+    public string ClientName { get; set; }
+    public string ModelName { get; set; }
     public HardwareMonitor.CPUInfoDto CpuInfo { get; set; }
     public List<HardwareMonitor.GPUInfoDto> Gpus { get; set; }
     public HardwareMonitor.MemoryStateDto Memory { get; set; }
     public string IloAddress { get; set; }
+    public long SystemUptime { get; set; }
+    public string SystemArchitecture { get; set; }
+    public string SystemPlatform { get; set; }
+    public List<StorageDriveDto> SystemStorageInformation { get; set; }
+    public bool System64Bit { get; set; }
+    public bool DotNetProcess64Bit { get; set; }
+    
 }
 
 class Program
@@ -38,6 +46,14 @@ class Program
         var clientPollRate = int.Parse(configuration["General:pollInSeconds"]);
         var iloAddress = configuration["General:iloAddress"];
 
+        var isSystem64Bit = EnvironmentUtils.Is64BitOperatingSystem();
+        var isProcess64Bit = EnvironmentUtils.Is64BitProcess();
+        var systemArch = EnvironmentUtils.GetSystemArchitecture();
+        var systemPlatform = EnvironmentUtils.GetPlatform();
+        var systemStorage = EnvironmentUtils.GetDriveInfo();
+
+        long cycleCounter = 0;
+
         LogMessage($"Connecting {GetHostName()} to {masterIp}:{masterPort} and polling data every {clientPollRate} seconds.");
         if (!IsZeroIPAddress(iloAddress))
         {
@@ -52,6 +68,12 @@ class Program
         {
             try
             {
+                cycleCounter++;
+                if (cycleCounter % 10 == 0)
+                {
+                    systemStorage = EnvironmentUtils.GetDriveInfo();
+                }
+
                 var systemInfo = new SystemInfoDTO
                 {
                     ClientName = ClientHostName,
@@ -59,28 +81,17 @@ class Program
                     Gpus = hardwareMonitor.GetGPUInfo(),
                     Memory = hardwareMonitor.GetMemoryState(),
                     ModelName = ClientModelName,
-                    IloAddress = iloAddress
+                    IloAddress = iloAddress,
+                    System64Bit = isSystem64Bit,
+                    DotNetProcess64Bit = isProcess64Bit,
+                    SystemArchitecture = systemArch,
+                    SystemPlatform = systemPlatform,
+                    SystemStorageInformation = systemStorage,
+                    SystemUptime = EnvironmentUtils.GetRawUptime(),
                 };
+                LogMessage(systemInfo.ToString());
+                await SendSystemInfoAsync(masterIp, masterPort, systemInfo);
 
-                var jsonData = JsonSerializer.Serialize(systemInfo, SystemInfoDTOJsonContext.Default.SystemInfoDTO);
-
-                using var client = new TcpClient(masterIp, masterPort);
-                using var stream = client.GetStream();
-                using var writer = new StreamWriter(stream);
-                using var reader = new StreamReader(stream);
-
-                await writer.WriteLineAsync(jsonData);
-                await writer.FlushAsync();
-
-                var responseData = await reader.ReadLineAsync();
-                if (responseData != null && responseData.Equals("OK-200", StringComparison.OrdinalIgnoreCase))
-                {
-                    LogMessage("Received response: " + responseData);
-                }
-                else
-                {
-                    LogMessage("ERROR-404: " + responseData);
-                }
             }
             catch (Exception ex)
             {
@@ -88,6 +99,41 @@ class Program
             }
 
             await Task.Delay(clientPollRate * 1000);
+        }
+    }
+
+        public static async Task SendSystemInfoAsync(string masterIp, int masterPort, object systemInfo)
+    {
+        // Serialize the system info object to JSON using a specific JsonContext (if needed)
+        var jsonData = JsonSerializer.Serialize(systemInfo, SystemInfoDTOJsonContext.Default.SystemInfoDTO);
+
+        try
+        {
+            // Establish a TCP connection to the master server
+            using var client = new TcpClient(masterIp, masterPort);
+            using var stream = client.GetStream();
+            using var writer = new StreamWriter(stream);
+            using var reader = new StreamReader(stream);
+
+            // Send the serialized data to the master server
+            await writer.WriteLineAsync(jsonData);
+            await writer.FlushAsync();
+
+            // Read the server's response
+            var responseData = await reader.ReadLineAsync();
+            if (responseData != null && responseData.Equals("OK-200", StringComparison.OrdinalIgnoreCase))
+            {
+                LogMessage("Received response: " + responseData);
+            }
+            else
+            {
+                LogMessage("ERROR-404: " + responseData);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions that occur during the process
+            LogMessage("Exception: " + ex.Message);
         }
     }
 

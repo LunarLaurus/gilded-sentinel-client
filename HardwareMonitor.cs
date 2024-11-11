@@ -19,7 +19,7 @@ public class HardwareMonitor
     }
 
     // CPU Info Class
-    public class CPUInfoDto
+    public record CPUInfoDto
     {
         public Dictionary<int, CPUData> CpuDataBySocket { get; set; } = new();
         public int CpuCount { get; set; }
@@ -33,7 +33,7 @@ public class HardwareMonitor
     }
 
     // Memory State Class
-    public class MemoryStateDto
+    public record MemoryStateDto
     {
         public float? Used { get; set; }
         public float? Available { get; set; }
@@ -41,7 +41,7 @@ public class HardwareMonitor
     }
 
     // GPU Info Class
-    public class GPUInfoDto
+    public record GPUInfoDto
     {
         public string Name { get; set; }
         public Dictionary<string, float?> Temperatures { get; set; } = new();
