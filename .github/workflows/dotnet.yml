@@ -43,7 +43,7 @@ jobs:
 
       # Upload the build artifact
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Gilded-Sentinel-Build-${{ matrix.runtime }}-${{ github.sha }}
           path: ./assemblies/${{ matrix.runtime }}/*-${{ github.run_number }}.zip
