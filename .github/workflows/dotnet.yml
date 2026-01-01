@@ -15,7 +15,7 @@ jobs:
 
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Setup .NET
       - name: Setup .NET
@@ -56,7 +56,7 @@ jobs:
     steps:
       # Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # Download build artifacts for both runtimes
       - name: Download Windows Build Artifacts
